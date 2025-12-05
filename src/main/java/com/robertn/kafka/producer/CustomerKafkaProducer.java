@@ -1,4 +1,4 @@
-package com.worklab.kafka.producer;
+package com.robertn.kafka.producer;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
