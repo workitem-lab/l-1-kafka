@@ -1,33 +1,73 @@
 version: '3.8'
 
 services:
-  kafka:
-    image: apache/kafka:latest
-    container_name: kafka
+  kafka-1:
+    image: apache/kafka:latest                     # Kafka image (KRaft-enabled)
+    container_name: kafka-1                        # Container name for easy reference
     ports:
-      # Internal broker port 9092 → exposed as 19092 on your Mac
-      - "19092:9092"
+      - "19092:9092"                               # Expose broker client port to host (host:container)
     environment:
-      # --- KRaft single-node config ---
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
-
-      # --- Listeners ---
-      # Inside Docker network: broker listens on 9092 and 9093
+      KAFKA_NODE_ID: 1                             # Unique broker id
+      KAFKA_PROCESS_ROLES: broker,controller       # This process acts as both broker and controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      # Controller quorum members (id@host:port) for KRaft
       KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
-      # From your Mac you’ll connect to localhost:19092
+      # Bind addresses: client listener and controller listener
       KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:19092"
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # What this broker advertises to clients (host:port reachable from host)
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER  # Which listener name is used for controller RPCs
 
-      # --- Storage ---
-      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
-
-      # --- Topic defaults (fine for dev) ---
-      KAFKA_NUM_PARTITIONS: 3
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"        # Internal path for topic logs inside container
+      KAFKA_NUM_PARTITIONS: 3                      # Default partitions per topic
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3    # Replication factor for internal offsets topic
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      # Replication factor for transaction state topic
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2       # Minimum in-sync replicas required for writes
 
     volumes:
-      - ./data:/var/lib/kafka/data
+      - ./data/kafka-1:/var/lib/kafka/data         # Persist broker data on host per broker
+
+  kafka-2:
+    image: apache/kafka:latest
+    container_name: kafka-2
+    ports:
+      - "19093:9092"                               # Host port 19093 → container 9092 for broker 2
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:19093"
+      # Advertise a different host port so each broker is reachable
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+
+    volumes:
+      - ./data/kafka-2:/var/lib/kafka/data         # Separate data dir to avoid collisions
+
+  kafka-3:
+    image: apache/kafka:latest
+    container_name: kafka-3
+    ports:
+      - "19094:9092"                               # Host port 19094 → container 9092 for broker 3
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:19094"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+
+    volumes:
+      - ./data/kafka-3:/var/lib/kafka/data         # Broker 3 persistent storage
