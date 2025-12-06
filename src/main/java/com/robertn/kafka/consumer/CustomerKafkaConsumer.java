@@ -15,7 +15,7 @@ public class CustomerKafkaConsumer {
     public static void main(String[] args) {
         Properties props = new Properties();
 
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19-92");
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:19092");
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "kafka-l1-service");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -35,7 +35,7 @@ public class CustomerKafkaConsumer {
 
                 for (ConsumerRecord<String, String> record : records) {
                     System.out.printf(
-                            "KYC consumed: key=%s, value=%s, partition=%d, offset=%d%n",
+                            " consumed: key=%s, value=%s, partition=%d, offset=%d%n",
                             record.key(), record.value(), record.partition(), record.offset()
                     );
                 }

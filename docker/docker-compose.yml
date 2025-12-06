@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka
+    ports:
+      # Internal broker port 9092 → exposed as 19092 on your Mac
+      - "19092:9092"
+    environment:
+      # --- KRaft single-node config ---
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+
+      # --- Listeners ---
+      # Inside Docker network: broker listens on 9092 and 9093
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      # From your Mac you’ll connect to localhost:19092
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:19092"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # --- Storage ---
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+
+      # --- Topic defaults (fine for dev) ---
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+    volumes:
+      - ./data:/var/lib/kafka/data
